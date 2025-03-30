@@ -97,6 +97,9 @@ const HTML_TAGS: [&str; 62] = [
     "ul",
 ];
 
+/// TODO: figure out what this function does.
+type NewlineHandlerFn<'a> = &'a dyn Fn(&[u8]) -> usize;
+
 /// Analysis of the beginning of a line, including indentation and container
 /// markers.
 #[derive(Clone)]
@@ -130,7 +133,7 @@ pub(crate) struct LineStart<'a> {
     min_hrule_offset: usize,
 }
 
-impl<'a> LineStart<'a> {
+impl LineStart<'_> {
     pub(crate) fn new(bytes: &[u8]) -> LineStart<'_> {
         LineStart {
             bytes,
@@ -492,11 +495,11 @@ fn scan_attr_value_chars(data: &[u8]) -> usize {
 }
 
 pub(crate) fn scan_eol(bytes: &[u8]) -> Option<usize> {
-    match bytes {
-        &[] => Some(0),
-        &[b'\n', ..] => Some(1),
-        &[b'\r', b'\n', ..] => Some(2),
-        &[b'\r', ..] => Some(1),
+    match *bytes {
+        [] => Some(0),
+        [b'\n', ..] => Some(1),
+        [b'\r', b'\n', ..] => Some(2),
+        [b'\r', ..] => Some(1),
         _ => None,
     }
 }
@@ -1026,7 +1029,7 @@ fn scan_attribute_name(data: &[u8]) -> Option<usize> {
 fn scan_attribute(
     data: &[u8],
     mut ix: usize,
-    newline_handler: Option<&dyn Fn(&[u8]) -> usize>,
+    newline_handler: Option<NewlineHandlerFn>,
     buffer: &mut Vec<u8>,
     buffer_ix: &mut usize,
 ) -> Option<usize> {
@@ -1057,7 +1060,7 @@ fn scan_attribute(
 fn scan_whitespace_with_newline_handler(
     data: &[u8],
     mut i: usize,
-    newline_handler: Option<&dyn Fn(&[u8]) -> usize>,
+    newline_handler: Option<NewlineHandlerFn>,
     buffer: &mut Vec<u8>,
     buffer_ix: &mut usize,
 ) -> Option<usize> {
@@ -1094,7 +1097,7 @@ fn scan_whitespace_with_newline_handler(
 fn scan_whitespace_with_newline_handler_without_buffer(
     data: &[u8],
     mut i: usize,
-    newline_handler: Option<&dyn Fn(&[u8]) -> usize>,
+    newline_handler: Option<NewlineHandlerFn>,
 ) -> Option<usize> {
     while i < data.len() {
         if !is_ascii_whitespace(data[i]) {
@@ -1117,7 +1120,7 @@ fn scan_whitespace_with_newline_handler_without_buffer(
 fn scan_attribute_value(
     data: &[u8],
     mut i: usize,
-    newline_handler: Option<&dyn Fn(&[u8]) -> usize>,
+    newline_handler: Option<NewlineHandlerFn>,
     buffer: &mut Vec<u8>,
     buffer_ix: &mut usize,
 ) -> Option<usize> {
@@ -1265,7 +1268,7 @@ pub(crate) fn scan_html_type_7(data: &[u8]) -> Option<usize> {
 /// If no bytes were skipped, the buffer will be empty.
 pub(crate) fn scan_html_block_inner(
     data: &[u8],
-    newline_handler: Option<&dyn Fn(&[u8]) -> usize>,
+    newline_handler: Option<NewlineHandlerFn>,
 ) -> Option<(Vec<u8>, usize)> {
     let mut buffer = Vec::new();
     let mut last_buf_index = 0;
