@@ -931,7 +931,7 @@ impl<'a> FirstPass<'a, '_> {
                         self.options,
                     );
                     // the previous expression was (c != b'~' || count <= 2) || (c == b'~' && count == 2)
-                    let is_valid_seq = (c == b'~' && count == 2) || count <= 2;
+                    let is_valid_seq = (c != b'~') || (count <= 2);
 
                     if (can_open || can_close) && is_valid_seq {
                         self.tree.append_text(begin_text, ix, backslash_escaped);
