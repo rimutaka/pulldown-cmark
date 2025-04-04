@@ -11,10 +11,9 @@ use core::{
     str::from_utf8,
 };
 
+/// Must be at least 4 bytes to store a utf-8 char
 const MAX_INLINE_STR_LEN: usize = 3 * core::mem::size_of::<isize>() - 2;
-// we need 4 bytes to store a utf-8 char
-// removing this check disables `max_inline_str_len_atleast_four` test
-// debug_assert!(MAX_INLINE_STR_LEN >= 4);
+const _: () = debug_assert!(MAX_INLINE_STR_LEN >= 4);
 
 /// Returned when trying to convert a `&str` into a `InlineStr`
 /// but it fails because it doesn't fit.
@@ -326,12 +325,6 @@ mod test_special_string {
         let owned: String = smort.to_string();
         let expected = "藏".to_owned();
         assert_eq!(expected, owned);
-    }
-
-    #[test]
-    fn max_inline_str_len_atleast_four() {
-        // we need 4 bytes to store a char
-        assert!(MAX_INLINE_STR_LEN >= 4);
     }
 
     #[test]
