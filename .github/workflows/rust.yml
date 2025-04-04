@@ -14,7 +14,7 @@ jobs:
   pulldown-cmark:
     strategy:
       matrix:
-        rust-version: ['1.71.1', 'stable', 'nightly']
+        rust-version: ['1.85.1', 'stable', 'nightly']
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -24,17 +24,17 @@ jobs:
       if: ${{ matrix.rust-version == 'stable' }}
       run: cargo fmt --check
     - name: Cargo build
-      if: ${{ matrix.rust-version == '1.71.1' }}
+      if: ${{ matrix.rust-version == '1.85.1' }}
       run: cargo build --verbose
     - name: Cargo build the workspace
-      if: ${{ matrix.rust-version != '1.71.1' }}
+      if: ${{ matrix.rust-version != '1.85.1' }}
       run: cargo build --workspace --verbose
     - name: Cargo test
       # dos-fuzzer does not build with old rust version
-      if: ${{ matrix.rust-version == '1.71.1' }}
+      if: ${{ matrix.rust-version == '1.85.1' }}
       run: cargo test --verbose
     - name: Cargo test the workspace
-      if: ${{ matrix.rust-version != '1.71.1' }}
+      if: ${{ matrix.rust-version != '1.85.1' }}
       run: cargo test --verbose --workspace
     - name: Cargo test with simd feature enabled
       run: cargo test --features=simd,gen-tests
