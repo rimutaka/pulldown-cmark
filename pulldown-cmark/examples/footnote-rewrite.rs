@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Write as _, io::Write as _};
 
-use pulldown_cmark::{html, CowStr, Event, Options, Parser, Tag, TagEnd};
+use pulldown_cmark::{CowStr, Event, Options, Parser, Tag, TagEnd, html};
 
 /// This example shows how to do footnotes as bottom-notes, in the style of GitHub.
 fn main() {

@@ -1,4 +1,4 @@
-use pulldown_cmark::{html, BrokenLink, Options, Parser};
+use pulldown_cmark::{BrokenLink, Options, Parser, html};
 
 fn main() {
     let input: &str = "Hello world, check out [my website][].";
@@ -26,8 +26,7 @@ fn main() {
     html::push_html(&mut html_output, parser);
 
     // Check that the output is what we expected.
-    let expected_html: &str =
-        "<p>Hello world, check out <a href=\"http://example.com\" title=\"my example website\">my website</a>.</p>\n";
+    let expected_html: &str = "<p>Hello world, check out <a href=\"http://example.com\" title=\"my example website\">my website</a>.</p>\n";
     assert_eq!(expected_html, &html_output);
 
     // Write result to stdout.

@@ -5,17 +5,19 @@ use pulldown_cmark::{Options, Parser};
 #[rustfmt::skip]
 mod suite;
 
+pub struct TestMarkdownHtmlParams {
+    pub input: &'static str,
+    pub output: &'static str,
+    pub smart_punct: bool,
+    pub metadata_blocks: bool,
+    pub old_footnotes: bool,
+    pub subscript: bool,
+    pub wikilinks: bool,
+    pub deflists: bool,
+}
+
 #[inline(never)]
-pub fn test_markdown_html(
-    input: &str,
-    output: &str,
-    smart_punct: bool,
-    metadata_blocks: bool,
-    old_footnotes: bool,
-    subscript: bool,
-    wikilinks: bool,
-    deflists: bool,
-) {
+pub fn test_markdown_html(params: TestMarkdownHtmlParams) {
     let mut s = String::new();
 
     let mut opts = Options::empty();
@@ -23,37 +25,37 @@ pub fn test_markdown_html(
     opts.insert(Options::ENABLE_TABLES);
     opts.insert(Options::ENABLE_STRIKETHROUGH);
     opts.insert(Options::ENABLE_SUPERSCRIPT);
-    if wikilinks {
+    if params.wikilinks {
         opts.insert(Options::ENABLE_WIKILINKS);
     }
-    if subscript {
+    if params.subscript {
         opts.insert(Options::ENABLE_SUBSCRIPT);
     }
     opts.insert(Options::ENABLE_TASKLISTS);
     opts.insert(Options::ENABLE_GFM);
-    if old_footnotes {
+    if params.old_footnotes {
         opts.insert(Options::ENABLE_OLD_FOOTNOTES);
     } else {
         opts.insert(Options::ENABLE_FOOTNOTES);
     }
-    if metadata_blocks {
+    if params.metadata_blocks {
         opts.insert(Options::ENABLE_YAML_STYLE_METADATA_BLOCKS);
         opts.insert(Options::ENABLE_PLUSES_DELIMITED_METADATA_BLOCKS);
     }
-    if smart_punct {
+    if params.smart_punct {
         opts.insert(Options::ENABLE_SMART_PUNCTUATION);
     }
     opts.insert(Options::ENABLE_HEADING_ATTRIBUTES);
-    if deflists {
+    if params.deflists {
         opts.insert(Options::ENABLE_DEFINITION_LIST);
     }
 
-    let p = Parser::new_ext(input, opts);
+    let p = Parser::new_ext(params.input, opts);
     pulldown_cmark::html::push_html(&mut s, p);
 
     // normalizing the HTML using html5ever may hide actual errors
     // assert_eq!(html_standardize(output), html_standardize(&s));
-    assert_eq!(html_standardize(output), html_standardize(&s));
+    assert_eq!(html_standardize(params.output), html_standardize(&s));
 }
 
 fn html_standardize(s: &str) -> String {

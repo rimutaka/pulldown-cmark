@@ -1,4 +1,4 @@
-use pulldown_cmark::{html, Options, Parser};
+use pulldown_cmark::{Options, Parser, html};
 
 fn main() {
     let markdown_input: &str = "Hello world, this is a ~~complicated~~ *very simple* example.";

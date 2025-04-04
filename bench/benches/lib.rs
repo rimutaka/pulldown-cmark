@@ -33,7 +33,7 @@ mod to_html {
         let mut buf = String::new();
         for i in 1..20 {
             buf.clear();
-            buf.push_str(&"[x]: ");
+            buf.push_str("[x]: ");
             buf.push_str(&"x".repeat(i * 100));
             buf.push_str(&"\n[x]".repeat(i * 100));
             group.throughput(Throughput::Bytes(buf.len() as u64));

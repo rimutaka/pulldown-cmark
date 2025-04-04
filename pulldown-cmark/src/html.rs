@@ -28,11 +28,11 @@ use std::collections::HashMap;
 use hashbrown::HashMap;
 #[cfg(feature = "std")]
 use pulldown_cmark_escape::IoWriter;
-use pulldown_cmark_escape::{escape_href, escape_html, escape_html_body_text, FmtWriter, StrWrite};
+use pulldown_cmark_escape::{FmtWriter, StrWrite, escape_href, escape_html, escape_html_body_text};
 
 use crate::{
-    strings::CowStr, Alignment, BlockQuoteKind, CodeBlockKind, Event, Event::*, LinkType, Tag,
-    TagEnd,
+    Alignment, BlockQuoteKind, CodeBlockKind, Event, Event::*, LinkType, Tag, TagEnd,
+    strings::CowStr,
 };
 
 enum TableState {

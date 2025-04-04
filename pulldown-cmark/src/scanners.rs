@@ -27,8 +27,8 @@ use memchr::memchr;
 
 pub(crate) use crate::puncttable::{is_ascii_punctuation, is_punctuation};
 use crate::{
-    entities, parse::HtmlScanGuard, strings::CowStr, Alignment, BlockQuoteKind, HeadingLevel,
-    LinkType,
+    Alignment, BlockQuoteKind, HeadingLevel, LinkType, entities, parse::HtmlScanGuard,
+    strings::CowStr,
 };
 
 // sorted for binary search
@@ -616,11 +616,7 @@ pub(crate) fn scan_hrule(bytes: &[u8]) -> Result<usize, usize> {
         }
         i += 1;
     }
-    if n >= 3 {
-        Ok(i)
-    } else {
-        Err(i)
-    }
+    if n >= 3 { Ok(i) } else { Err(i) }
 }
 
 /// Scan an ATX heading opening sequence.
@@ -628,7 +624,7 @@ pub(crate) fn scan_hrule(bytes: &[u8]) -> Result<usize, usize> {
 /// Returns number of bytes in prefix and level.
 pub(crate) fn scan_atx_heading(data: &[u8]) -> Option<HeadingLevel> {
     let level = scan_ch_repeat(data, b'#');
-    if data.get(level).copied().map_or(true, is_ascii_whitespace) {
+    if data.get(level).copied().is_none_or(is_ascii_whitespace) {
         HeadingLevel::try_from(level).ok()
     } else {
         None

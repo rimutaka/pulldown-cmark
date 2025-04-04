@@ -1,6 +1,6 @@
 use std::io::Write as _;
 
-use pulldown_cmark::{html, Event, Options, Parser, Tag, TagEnd};
+use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd, html};
 
 fn main() {
     let markdown_input: &str = "This is Peter on ![holiday in Greece](pearl_beach.jpg).";

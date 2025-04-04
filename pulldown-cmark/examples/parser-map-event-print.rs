@@ -1,4 +1,4 @@
-use pulldown_cmark::{html, Event, Parser};
+use pulldown_cmark::{Event, Parser, html};
 
 fn main() {
     let markdown_input = "# Example Heading\nExample paragraph with **lorem** _ipsum_ text.";

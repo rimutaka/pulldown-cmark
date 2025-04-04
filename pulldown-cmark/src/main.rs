@@ -29,7 +29,7 @@ use std::{
     path::PathBuf,
 };
 
-use pulldown_cmark::{html, BrokenLink, Options, Parser};
+use pulldown_cmark::{BrokenLink, Options, Parser, html};
 
 fn dry_run(text: &str, opts: Options, broken_links: &mut Vec<BrokenLink<'static>>) {
     let p = Parser::new_with_broken_link_callback(

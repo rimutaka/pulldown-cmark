@@ -130,7 +130,7 @@ pub enum CodeBlockKind<'a> {
     Fenced(CowStr<'a>),
 }
 
-impl<'a> CodeBlockKind<'a> {
+impl CodeBlockKind<'_> {
     pub fn is_indented(&self) -> bool {
         matches!(*self, CodeBlockKind::Indented)
     }
@@ -305,7 +305,7 @@ pub enum Tag<'a> {
     MetadataBlock(MetadataBlockKind),
 }
 
-impl<'a> Tag<'a> {
+impl Tag<'_> {
     pub fn to_end(&self) -> TagEnd {
         match self {
             Tag::Paragraph => TagEnd::Paragraph,
@@ -439,7 +439,7 @@ pub enum TagEnd {
 #[cfg(target_pointer_width = "64")]
 const _STATIC_ASSERT_TAG_END_SIZE: [(); 2] = [(); core::mem::size_of::<TagEnd>()];
 
-impl<'a> From<Tag<'a>> for TagEnd {
+impl From<Tag<'_>> for TagEnd {
     fn from(value: Tag) -> Self {
         value.to_end()
     }
@@ -629,7 +629,7 @@ pub enum Event<'a> {
     TaskListMarker(bool),
 }
 
-impl<'a> Event<'a> {
+impl Event<'_> {
     pub fn into_static(self) -> Event<'static> {
         match self {
             Event::Start(t) => Event::Start(t.into_static()),

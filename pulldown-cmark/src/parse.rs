@@ -35,13 +35,13 @@ use hashbrown::HashMap;
 use unicase::UniCase;
 
 use crate::{
+    Alignment, BlockQuoteKind, CodeBlockKind, Event, HeadingLevel, LinkType, MetadataBlockKind,
+    Options, Tag, TagEnd,
     firstpass::run_first_pass,
-    linklabel::{scan_link_label_rest, FootnoteLabel, LinkLabel, ReferenceLabel},
+    linklabel::{FootnoteLabel, LinkLabel, ReferenceLabel, scan_link_label_rest},
     scanners::*,
     strings::CowStr,
     tree::{Tree, TreeIndex},
-    Alignment, BlockQuoteKind, CodeBlockKind, Event, HeadingLevel, LinkType, MetadataBlockKind,
-    Options, Tag, TagEnd,
 };
 
 // Allowing arbitrary depth nested parentheses inside link destinations
@@ -224,7 +224,7 @@ pub struct Parser<'input, F = DefaultBrokenLinkCallback> {
     math_delims: MathDelims,
 }
 
-impl<'input, F> core::fmt::Debug for Parser<'input, F> {
+impl<F> core::fmt::Debug for Parser<'_, F> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         // Only print the fields that have public types.
         f.debug_struct("Parser")
@@ -238,7 +238,7 @@ impl<'input, F> core::fmt::Debug for Parser<'input, F> {
     }
 }
 
-impl<'a> BrokenLink<'a> {
+impl BrokenLink<'_> {
     /// Moves the link into version with a static lifetime.
     ///
     /// The `reference` member is cloned to a Boxed or Inline version.
@@ -471,7 +471,7 @@ impl<'input, F: BrokenLinkCallback<'input>> Parser<'input, F> {
                         cur = self.tree[cur_ix].next;
                         continue;
                     }
-                    let is_display = self.tree[cur_ix].next.map_or(false, |next_ix| {
+                    let is_display = self.tree[cur_ix].next.is_some_and(|next_ix| {
                         matches!(
                             self.tree[next_ix].item.body,
                             ItemBody::MaybeMath(_can_open, _can_close, _brace_context)
@@ -497,7 +497,7 @@ impl<'input, F: BrokenLinkCallback<'input>> Parser<'input, F> {
                                 self.tree[scan_ix].item.body
                             {
                                 let delim_is_display =
-                                    self.tree[scan_ix].next.map_or(false, |next_ix| {
+                                    self.tree[scan_ix].next.is_some_and(|next_ix| {
                                         matches!(
                                             self.tree[next_ix].item.body,
                                             ItemBody::MaybeMath(
@@ -1000,18 +1000,13 @@ impl<'input, F: BrokenLinkCallback<'input>> Parser<'input, F> {
                                                 backslash_escaped: false,
                                             }
                                         }
+                                    } else if self.options.contains(Options::ENABLE_SUBSCRIPT) {
+                                        ItemBody::Subscript
+                                    } else if self.options.contains(Options::ENABLE_STRIKETHROUGH) {
+                                        ItemBody::Strikethrough
                                     } else {
-                                        if self.options.contains(Options::ENABLE_SUBSCRIPT) {
-                                            ItemBody::Subscript
-                                        } else if self
-                                            .options
-                                            .contains(Options::ENABLE_STRIKETHROUGH)
-                                        {
-                                            ItemBody::Strikethrough
-                                        } else {
-                                            ItemBody::Text {
-                                                backslash_escaped: false,
-                                            }
+                                        ItemBody::Text {
+                                            backslash_escaped: false,
                                         }
                                     }
                                 } else if c == b'^' {
@@ -1827,7 +1822,7 @@ pub struct LinkDef<'a> {
     pub span: Range<usize>,
 }
 
-impl<'a> LinkDef<'a> {
+impl LinkDef<'_> {
     pub fn into_static(self) -> LinkDef<'static> {
         LinkDef {
             dest: self.dest.into_static(),
@@ -2091,7 +2086,7 @@ impl<'a> Index<LinkIndex> for Allocations<'a> {
     }
 }
 
-impl<'a> Index<AlignmentIndex> for Allocations<'a> {
+impl Index<AlignmentIndex> for Allocations<'_> {
     type Output = Vec<Alignment>;
 
     fn index(&self, ix: AlignmentIndex) -> &Self::Output {
@@ -2277,7 +2272,7 @@ fn item_to_event<'a>(item: Item, text: &'a str, allocs: &mut Allocations<'a>) ->
         ItemBody::SoftBreak => return Event::SoftBreak,
         ItemBody::HardBreak(_) => return Event::HardBreak,
         ItemBody::FootnoteReference(cow_ix) => {
-            return Event::FootnoteReference(allocs.take_cow(cow_ix))
+            return Event::FootnoteReference(allocs.take_cow(cow_ix));
         }
         ItemBody::TaskListMarker(checked) => return Event::TaskListMarker(checked),
         ItemBody::Rule => return Event::Rule,
@@ -2344,7 +2339,7 @@ fn item_to_event<'a>(item: Item, text: &'a str, allocs: &mut Allocations<'a>) ->
                 Event::DisplayMath(allocs.take_cow(cow_ix))
             } else {
                 Event::InlineMath(allocs.take_cow(cow_ix))
-            }
+            };
         }
         ItemBody::DefinitionList(_) => Tag::DefinitionList,
         ItemBody::DefinitionListTitle => Tag::DefinitionListTitle,
@@ -2726,15 +2721,12 @@ mod test {
             Parser::new_with_broken_link_callback(test_str, Options::empty(), Some(&mut callback));
         let mut link_tag_count = 0;
         for (typ, url, title, id) in parser.filter_map(|event| match event {
-            Event::Start(tag) => match tag {
-                Tag::Link {
-                    link_type,
-                    dest_url,
-                    title,
-                    id,
-                } => Some((link_type, dest_url, title, id)),
-                _ => None,
-            },
+            Event::Start(Tag::Link {
+                link_type,
+                dest_url,
+                title,
+                id,
+            }) => Some((link_type, dest_url, title, id)),
             _ => None,
         }) {
             link_tag_count += 1;
@@ -2751,12 +2743,9 @@ mod test {
         let parser = Parser::new("hello\n```test\ntadam\n```");
         let mut found = 0;
         for (ev, _range) in parser.into_offset_iter() {
-            match ev {
-                Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(syntax))) => {
-                    assert_eq!(syntax.as_ref(), "test");
-                    found += 1;
-                }
-                _ => {}
+            if let Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(syntax))) = ev {
+                assert_eq!(syntax.as_ref(), "test");
+                found += 1;
             }
         }
         assert_eq!(found, 1);
@@ -2767,11 +2756,8 @@ mod test {
         let parser = Parser::new("hello\n\n    ```test\n    tadam\nhello");
         let mut found = 0;
         for (ev, _range) in parser.into_offset_iter() {
-            match ev {
-                Event::Start(Tag::CodeBlock(CodeBlockKind::Indented)) => {
-                    found += 1;
-                }
-                _ => {}
+            if let Event::Start(Tag::CodeBlock(CodeBlockKind::Indented)) = ev {
+                found += 1;
             }
         }
         assert_eq!(found, 1);

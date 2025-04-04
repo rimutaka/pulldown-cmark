@@ -12,6 +12,9 @@ use core::{
 };
 
 const MAX_INLINE_STR_LEN: usize = 3 * core::mem::size_of::<isize>() - 2;
+// we need 4 bytes to store a utf-8 char
+// removing this check disables `max_inline_str_len_atleast_four` test
+// debug_assert!(MAX_INLINE_STR_LEN >= 4);
 
 /// Returned when trying to convert a `&str` into a `InlineStr`
 /// but it fails because it doesn't fit.
@@ -102,7 +105,7 @@ pub enum CowStr<'a> {
 mod serde_impl {
     use core::fmt;
 
-    use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+    use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 
     use super::CowStr;
 
@@ -159,19 +162,19 @@ mod serde_impl {
     }
 }
 
-impl<'a> AsRef<str> for CowStr<'a> {
+impl AsRef<str> for CowStr<'_> {
     fn as_ref(&self) -> &str {
         self.deref()
     }
 }
 
-impl<'a> Hash for CowStr<'a> {
+impl Hash for CowStr<'_> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.deref().hash(state);
     }
 }
 
-impl<'a> core::clone::Clone for CowStr<'a> {
+impl core::clone::Clone for CowStr<'_> {
     fn clone(&self) -> Self {
         match self {
             CowStr::Boxed(s) => match InlineStr::try_from(&**s) {
@@ -196,13 +199,13 @@ impl<'a> From<&'a str> for CowStr<'a> {
     }
 }
 
-impl<'a> From<String> for CowStr<'a> {
+impl From<String> for CowStr<'_> {
     fn from(s: String) -> Self {
         CowStr::Boxed(s.into_boxed_str())
     }
 }
 
-impl<'a> From<char> for CowStr<'a> {
+impl From<char> for CowStr<'_> {
     fn from(c: char) -> Self {
         CowStr::Inlined(c.into())
     }
@@ -243,25 +246,25 @@ impl<'a> From<CowStr<'a>> for String {
     }
 }
 
-impl<'a> Deref for CowStr<'a> {
+impl Deref for CowStr<'_> {
     type Target = str;
 
     fn deref(&self) -> &str {
         match self {
-            CowStr::Boxed(ref b) => b,
+            CowStr::Boxed(b) => b,
             CowStr::Borrowed(b) => b,
-            CowStr::Inlined(ref s) => s.deref(),
+            CowStr::Inlined(s) => s.deref(),
         }
     }
 }
 
-impl<'a> Borrow<str> for CowStr<'a> {
+impl Borrow<str> for CowStr<'_> {
     fn borrow(&self) -> &str {
         self.deref()
     }
 }
 
-impl<'a> CowStr<'a> {
+impl CowStr<'_> {
     pub fn into_string(self) -> String {
         match self {
             CowStr::Boxed(b) => b.into(),
@@ -282,7 +285,7 @@ impl<'a> CowStr<'a> {
     }
 }
 
-impl<'a> fmt::Display for CowStr<'a> {
+impl fmt::Display for CowStr<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_ref())
     }
