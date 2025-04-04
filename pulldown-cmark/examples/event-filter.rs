@@ -6,16 +6,19 @@ fn main() {
     let markdown_input: &str = "This is Peter on ![holiday in Greece](pearl_beach.jpg).";
     println!("Parsing the following markdown string:\n{}", markdown_input);
 
-    // Set up parser. We can treat is as any other iterator. We replace Peter by John
-    // and image by its alt text.
+    // Set up a parser with default options. We can treat is as any other iterator to modify its contents:
+    // - replace Peter by John
+    // - replace image by its alt text
     let parser = Parser::new_ext(markdown_input, Options::empty())
         .map(|event| match event {
             Event::Text(text) => Event::Text(text.replace("Peter", "John").into()),
             _ => event,
         })
-        .filter(|event| match event {
-            Event::Start(Tag::Image { .. }) | Event::End(TagEnd::Image) => false,
-            _ => true,
+        .filter(|event| {
+            !matches!(
+                event,
+                Event::Start(Tag::Image { .. }) | Event::End(TagEnd::Image),
+            )
         });
 
     // Write to anything implementing the `Write` trait. This could also be a file

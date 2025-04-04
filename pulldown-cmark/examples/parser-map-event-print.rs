@@ -11,7 +11,7 @@ fn main() {
     // For each event, we print its details, such as the tag or string.
     // This filter simply returns the same event without any changes;
     // you can compare the `event-filter` example which alters the output.
-    let parser = Parser::new(markdown_input).map(|event| {
+    let parser = Parser::new(markdown_input).inspect(|event| {
         match &event {
             Event::Start(tag) => println!("Start: {:?}", tag),
             Event::End(tag) => println!("End: {:?}", tag),
@@ -27,7 +27,6 @@ fn main() {
             Event::HardBreak => println!("HardBreak"),
             Event::Rule => println!("Rule"),
         };
-        event
     });
 
     let mut html_output = String::new();

@@ -42,9 +42,9 @@ fn main() {
     // For each event, we print its details, such as the tag or string.
     // This filter simply returns the same event without any changes;
     // you can compare the `event-filter` example which alters the output.
-    let parser = Parser::new_ext(markdown_input, Options::all()).map(|event| {
-        match &event {
-            Event::Start(tag) => match tag {
+    let parser = Parser::new_ext(markdown_input, Options::all()).inspect(|event| {
+        if let Event::Start(tag) = &event {
+            match tag {
                 Tag::HtmlBlock => println!("HtmlBlock"),
                 Tag::Heading {
                     level,
@@ -100,10 +100,8 @@ fn main() {
                 Tag::TableCell => println!("TableCell (contains inline tags)"),
                 Tag::FootnoteDefinition(label) => println!("FootnoteDefinition label: {}", label),
                 Tag::MetadataBlock(kind) => println!("MetadataBlock: {:?}", kind),
-            },
-            _ => (),
+            }
         };
-        event
     });
 
     let mut html_output = String::new();
